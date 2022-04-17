@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useState, useEffect } from "react"
 import { Layout, Typography, Input, Dropdown, Menu, Button } from "antd"
 import { GlobalOutlined } from "@ant-design/icons"
 import ButtonGroup from "antd/lib/button/button-group"
@@ -18,23 +18,41 @@ import {
   changeLanguageActionCreator,
   LanguageActionTypes,
 } from "../../redux/language/languageActions"
-import { useTranslation } from 'react-i18next'
+import { useTranslation } from "react-i18next"
+import jwt_decode, { JwtPayload as DefaultJwtPayload } from "jwt-decode"
+import { userSlice } from '../../redux/user/slice'
+interface JwtPayload extends DefaultJwtPayload {
+  username: string
+}
 
 export const Header: React.FC = () => {
+  const [username, setUsername] = useState("")
   const history = useHistory()
   const location = useLocation()
   const params = useParams()
   const match = useRouteMatch()
   const language = useSelector((state) => state.language.language)
   const languageList = useSelector((state) => state.language.languageList)
+  const jwt = useSelector((state) => state.user.token)
+  useEffect(() => {
+    if (jwt) {
+      const token = jwt_decode<JwtPayload>(jwt)
+      setUsername(token.username)
+    }
+  }, [jwt])
+
   // const dispatch = useDispatch<Dispatch<LanguageActionTypes>>()
   const dispatch = useDispatch()
 
-  const handleRegister = () => { 
-    history.push("register")
+  const handleRegister = () => {
+    history.push("/register")
   }
   const handleLogin = () => {
-    history.push("signIn")
+    history.push("/signIn")
+  }
+  const onLogOut = () => {
+    dispatch(userSlice.actions.logOut())
+    history.push("/")
   }
   const menuClickHandler = (e: any) => {
     if (e.key === "new") {
@@ -56,7 +74,7 @@ export const Header: React.FC = () => {
               <Menu onClick={menuClickHandler}>
                 {languageList.map((lang) => {
                   return <Menu.Item key={lang.code}>{lang.name}</Menu.Item>
-                })}   
+                })}
                 <Menu.Item key={"new"}>添加新语言</Menu.Item>
               </Menu>
             }
@@ -64,10 +82,31 @@ export const Header: React.FC = () => {
           >
             {language === "zh" ? "中文" : "English"}
           </Dropdown.Button>
-          <ButtonGroup className="button-group">
-            <Button onClick={handleRegister}>注册</Button>
-            <Button onClick={handleLogin}>登录</Button>
-          </ButtonGroup>
+          {jwt ? (
+            <Button.Group className="button-group">
+              <span>
+                {t("header.welcome")}
+                <Typography.Text strong>{username}</Typography.Text>
+              </span>
+              {/* shoppingCart */}
+              <Button
+                onClick={() => history.push("/shoppingCart")}
+                // loading={shoppingCartLoading}
+              >
+                {/* {t("header.shoppingCart")}({shoppingCartItems.length}) */}
+              </Button>
+              <Button onClick={onLogOut}>{t("header.signOut")}</Button>
+            </Button.Group>
+          ) : (
+            <Button.Group className="button-group">
+              <Button onClick={() => history.push("/register")}>
+                {t("header.register")}
+              </Button>
+              <Button onClick={() => history.push("/signIn")}>
+                {t("header.signin")}
+              </Button>
+            </Button.Group>
+          )}
         </div>
       </div>
       <Layout.Header className="main-header">
@@ -79,6 +118,9 @@ export const Header: React.FC = () => {
           <Input.Search
             className="search-input"
             placeholder="请输入旅游目的地、主题、或关键字"
+            onSearch={(keywords) => {
+              history.push(`/search/${keywords}`)
+            }}
           ></Input.Search>
         </span>
       </Layout.Header>

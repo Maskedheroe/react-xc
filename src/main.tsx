@@ -4,16 +4,19 @@ import "./index.css"
 import App from "./App"
 import "antd/dist/antd.css"
 import "./i18n/configs"
-import store from "./redux/store"
+import rootStore from "./redux/store"
 import { Provider } from "react-redux"
-import axios from 'axios';
+import axios from "axios"
+import { PersistGate } from "redux-persist/integration/react"
 
-axios.defaults.headers.common['x-icode'] = 'A76774E821B9AB65'
+axios.defaults.headers.common["x-icode"] = "D39F66BF2FE34CC8"
 
 ReactDOM.render(
   <React.StrictMode>
-    <Provider store={store}>
-      <App />
+    <Provider store={rootStore.store}>
+      <PersistGate persistor={rootStore.persistor}>
+        <App />
+      </PersistGate>
     </Provider>
   </React.StrictMode>,
   document.getElementById("root")
